@@ -116,17 +116,13 @@
         const pagination = $('#pagination');
         pagination.empty();
 
-        if (currentPage > 0) {
-            pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="loadStaffData(${currentPage - 1}, 5); return false;">Trước</a></li>`);
-        }
+        pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="loadStaffData(0, 5); return false;" ${currentPage === 0 ? 'class="disabled"' : ''}>Trước</a></li>`);
 
         for (let i = 0; i < totalPages; i++) {
             pagination.append(`<li class="page-item ${i === currentPage ? 'active' : ''}"><a class="page-link" href="#" onclick="loadStaffData(${i}, 5); return false;">${i + 1}</a></li>`);
         }
 
-        if (currentPage < totalPages - 1) {
-            pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="loadStaffData(${currentPage + 1}, 5); return false;">Sau</a></li>`);
-        }
+        pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="loadStaffData(${totalPages - 1}, 5); return false;" ${currentPage === totalPages - 1 ? 'class="disabled"' : ''}>Sau</a></li>`);
     }
 
     function deleteStaff(id) {
@@ -147,38 +143,42 @@
 
     function searchStaff() {
         var keyword = $('#search').val();
-        var status = $('#status').val();
 
         $.ajax({
-            url: '/api/xuongjava/search',
+            url: `/api/xuongjava/search/${encodeURIComponent(keyword)}`,
             method: 'GET',
-            data: {
-                keyword: keyword,
-                status: status
-            },
             success: function(data) {
                 const staffTable = $('#staffTable');
                 staffTable.empty();
-                data.forEach((staff, index) => {
-                    staffTable.append(`<tr>
-                    <td>${index + 1}</td>
-                    <td>${staff.code}</td>
-                    <td>${staff.name}</td>
-                    <td>${staff.accountFpt}</td>
-                    <td>${staff.accountFe}</td>
-                    <td>${staff.status}</td>
-                    <td>
-                        <button class="btn btn-sm btn-primary" onclick="editStaff('${staff.id}')">Sửa</button>
-                        <button class="btn btn-sm btn-danger">Xóa</button>
-                    </td>
-                </tr>`);
-                });
+
+                if (data.length === 0) {
+                    staffTable.append(`<tr><td colspan="7" class="text-center">Không tìm thấy dữ liệu nhân viên</td></tr>`);
+                } else {
+
+                    data.forEach((staff, index) => {
+                        staffTable.append(`<tr>
+                        <td>${index + 1}</td>
+                        <td>${staff.staffCode}</td>
+                        <td>${staff.name}</td>
+                        <td>${staff.accountFpt}</td>
+                        <td>${staff.accountFe}</td>
+                        <td>${staff.status}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="editStaff('${staff.id}')">Sửa</button>
+                            <button class="btn btn-sm btn-danger">Xóa</button>
+                        </td>
+                    </tr>`);
+                    });
+                }
             },
             error: function() {
                 alert('Lỗi khi tìm kiếm dữ liệu nhân viên.');
             }
         });
     }
+
+
+
 
     function validateStaffForm() {
         $('#staffCodeError').text('');

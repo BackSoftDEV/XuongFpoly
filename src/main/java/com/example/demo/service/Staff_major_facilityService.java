@@ -29,6 +29,9 @@ public class Staff_major_facilityService {
         Pageable p = PageRequest.of(page, size);
         return repo.findAll(p);
     }
+    public List<Staff> getAllStaff() {
+        return repo.findAll();
+    }
 
 //    public Page<Staff_major_facility> getPage(Integer page, Integer size) {
 //        if (page < 0) {
