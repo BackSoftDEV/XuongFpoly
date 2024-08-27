@@ -14,6 +14,7 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -41,31 +42,25 @@ public class HomeCtrl {
         return ResponseEntity.ok(servicedf.getPage(a));
     }
 
-    //        @GetMapping("/smf")
-//    public ResponseEntity<?> getPagesmf(@RequestParam(defaultValue = "o",name = "pagesmf")Integer b,
-//                                        @RequestParam(defaultValue = "5",name = "size")Integer c){
-//        return ResponseEntity.ok(servicesmf.getPage(b,c));
-//    }
+
 //    @GetMapping("/staff")
-//    public String viewStaffs(@RequestParam(defaultValue = "0", name = "page") Integer page,
-//                             @RequestParam(defaultValue = "10", name = "size") Integer size,
-//                             Model model) {
-//
-//        var staffPage = servicesmf.getPage(page, size);
-//
-//
-//        model.addAttribute("staffs", staffPage.getContent());
-//        model.addAttribute("currentPage", page);
-//        model.addAttribute("totalPages", staffPage.getTotalPages());
-//
-//
-//        return "view/viewqlnv";
+//    public ResponseEntity<?> getPageStaff(@RequestParam(defaultValue = "0", name = "pageStaff") Integer b,
+//                                          @RequestParam(defaultValue = "5", name = "size") Integer a) {
+//        return ResponseEntity.ok(servicesmf.getPage(b, a));
 //    }
-    @GetMapping("/staff")
-    public ResponseEntity<?> getPageStaff(@RequestParam(defaultValue = "0", name = "pageStaff") Integer b,
-                                          @RequestParam(defaultValue = "5", name = "size") Integer a) {
+@GetMapping("/staff")
+public ResponseEntity<?> getPageStaff(
+        @RequestParam(defaultValue = "0", name = "pageStaff") Integer b,
+        @RequestParam(defaultValue = "5", name = "size") Integer a,
+        @RequestParam(required = false, name = "status") Integer status) {
+
+    if (status != null) {
+        return ResponseEntity.ok(servicesmf.getStaffByStatus(PageRequest.of(b, a), status));
+    } else {
         return ResponseEntity.ok(servicesmf.getPage(b, a));
     }
+}
+
 
     @GetMapping("/staff-management")
     public String showStaffManagementPage() {

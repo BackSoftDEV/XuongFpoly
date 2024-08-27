@@ -14,6 +14,15 @@
     <div class="form-group">
         <input type="text" class="form-control" id="search" placeholder="Nhập từ khóa tìm kiếm (tên nhân viên)">
     </div>
+    <div class="form-group">
+        <label for="status">Trạng thái</label>
+        <select class="form-control" id="status">
+            <option value="">--Chọn trạng thái--</option>
+            <option value="1">Đang hoạt động</option>
+            <option value="0">Ngừng hoạt động</option>
+        </select>
+    </div>
+
 
     <button class="btn btn-primary" onclick="searchStaff()">Tìm kiếm</button>
     <button class="btn btn-success" onclick="importStaff()">Import nhân viên</button>
@@ -45,41 +54,40 @@
 
 <div id="updateStaffModalContainer"></div>
 
-<div class="modal fade" id="addStaffModal" tabindex="-1" aria-labelledby="addStaffModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addStaffModalLabel">Thêm nhân viên</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body" id="addStaffFormContainer">
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
-                <button type="button" class="btn btn-primary" onclick="saveStaff()">Lưu</button>
-            </div>
-        </div>
-    </div>
-</div>
 
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
+
         $('#addStaffModal').on('show.bs.modal', function () {
             $('#addStaffFormContainer').load('/view/add-staff-form.html');
         });
         loadStaffData(0, 5);
     });
 
-    function loadStaffData(page, size) {
+    let currentStatus = '';
+
+    $('#status').change(function () {
+        currentStatus = $(this).val();
+        loadStaffData(0, 5, currentStatus);
+    });
+
+    function loadStaffData(page, size, status) {
+        let dataParams = {
+            pageStaff: page,
+            size: size
+        };
+
+        if (status !== undefined && status !== '') {
+            currentStatus = status;
+            dataParams.status = status;
+        } else if (currentStatus !== '') {
+            dataParams.status = currentStatus;
+        }
+
         $.ajax({
             url: '/api/xuongjava/staff',
             method: 'GET',
-            data: {
-                pageStaff: page,
-                size: size
-            },
+            data: dataParams,
             success: function (response) {
                 const staffTable = $('#staffTable');
                 staffTable.empty();
@@ -101,28 +109,28 @@
                         </td>
                     </tr>`);
                     });
-                    updatePagination(response.totalPages, response.number);
+                    updatePagination(response.totalPages, response.number, currentStatus);
                 } else {
                     alert('Dữ liệu nhận được không phải là một mảng!');
                 }
             },
-            error: function() {
+            error: function () {
                 alert('Không thể tải dữ liệu từ máy chủ.');
             }
         });
     }
 
-    function updatePagination(totalPages, currentPage) {
+    function updatePagination(totalPages, currentPage, status) {
         const pagination = $('#pagination');
         pagination.empty();
 
-        pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="loadStaffData(0, 5); return false;" ${currentPage === 0 ? 'class="disabled"' : ''}>Trước</a></li>`);
+        pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="loadStaffData(0, 5, '${status}'); return false;" ${currentPage === 0 ? 'class="disabled"' : ''}>Trước</a></li>`);
 
         for (let i = 0; i < totalPages; i++) {
-            pagination.append(`<li class="page-item ${i === currentPage ? 'active' : ''}"><a class="page-link" href="#" onclick="loadStaffData(${i}, 5); return false;">${i + 1}</a></li>`);
+            pagination.append(`<li class="page-item ${i === currentPage ? 'active' : ''}"><a class="page-link" href="#" onclick="loadStaffData(${i}, 5, '${status}'); return false;">${i + 1}</a></li>`);
         }
 
-        pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="loadStaffData(${totalPages - 1}, 5); return false;" ${currentPage === totalPages - 1 ? 'class="disabled"' : ''}>Sau</a></li>`);
+        pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="loadStaffData(${totalPages - 1}, 5, '${status}'); return false;" ${currentPage === totalPages - 1 ? 'class="disabled"' : ''}>Sau</a></li>`);
     }
 
     function deleteStaff(id) {
@@ -130,11 +138,11 @@
             $.ajax({
                 url: `/api/xuongjava/delete/${id}`,
                 method: 'DELETE',
-                success: function(response) {
+                success: function (response) {
                     alert("Xóa nhân viên thành công!");
                     loadStaffData(0, 5);
                 },
-                error: function() {
+                error: function () {
                     alert("Xóa nhân viên thất bại.");
                 }
             });
@@ -147,7 +155,7 @@
         $.ajax({
             url: `/api/xuongjava/search/${encodeURIComponent(keyword)}`,
             method: 'GET',
-            success: function(data) {
+            success: function (data) {
                 const staffTable = $('#staffTable');
                 staffTable.empty();
 
@@ -156,13 +164,14 @@
                 } else {
 
                     data.forEach((staff, index) => {
+                        const statusText = staff.status === 1 ? 'Đang hoạt động' : 'Ngừng hoạt động';
                         staffTable.append(`<tr>
                         <td>${index + 1}</td>
                         <td>${staff.staffCode}</td>
                         <td>${staff.name}</td>
                         <td>${staff.accountFpt}</td>
                         <td>${staff.accountFe}</td>
-                        <td>${staff.status}</td>
+                        <td>${statusText}</td>
                         <td>
                             <button class="btn btn-sm btn-primary" onclick="editStaff('${staff.id}')">Sửa</button>
                             <button class="btn btn-sm btn-danger">Xóa</button>
@@ -171,13 +180,11 @@
                     });
                 }
             },
-            error: function() {
+            error: function () {
                 alert('Lỗi khi tìm kiếm dữ liệu nhân viên.');
             }
         });
     }
-
-
 
 
     function validateStaffForm() {
@@ -260,24 +267,24 @@
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(newStaff),
-            success: function(response) {
+            success: function (response) {
                 $('#addStaffModal').modal('hide');
                 alert('Thêm nhân viên thành công!');
                 loadStaffData(0, 5);
             },
-            error: function() {
+            error: function () {
                 alert('Thêm nhân viên thất bại.');
             }
         });
     }
 
     function editStaff(id) {
-        $('#updateStaffModalContainer').load('/view/update-staff-form.html', function() {
+        $('#updateStaffModalContainer').load('/view/update-staff-form.html', function () {
 
             $.ajax({
                 url: `/api/xuongjava/detail/${id}`,
                 method: 'GET',
-                success: function(staff) {
+                success: function (staff) {
                     $('#editStaffId').val(staff.id);
                     $('#editStaffCode').val(staff.staffCode);
                     $('#editStaffName').val(staff.name);
@@ -285,10 +292,9 @@
                     $('#editStaffEmailFE').val(staff.accountFe);
                     $('#editStaffStatus').val(staff.status);
 
-                    // Hiển thị modal sau khi dữ liệu đã được điền
                     $('#editStaffModal').modal('show');
                 },
-                error: function() {
+                error: function () {
                     alert('Không thể tải thông tin nhân viên.');
                 }
             });
@@ -378,16 +384,17 @@
             method: 'PUT',
             contentType: 'application/json',
             data: JSON.stringify(updatedStaff),
-            success: function(response) {
+            success: function (response) {
                 $('#editStaffModal').modal('hide');
                 alert('Cập nhật thông tin nhân viên thành công!');
                 loadStaffData(0, 5);
             },
-            error: function() {
+            error: function () {
                 alert('Cập nhật thông tin nhân viên thất bại.');
             }
         });
     }
+
     function downloadTemplate() {
         window.location.href = '/api/xuongjava/download-template';
     }

@@ -22,28 +22,16 @@ public class Staff_major_facilityService {
     @Autowired
     private StaffRepo repo;
         public Page<Staff> getPage(Integer page,Integer size){
-//        int size = 5;
-//        if (page < 0) {
-//            page = 0;
-//        }
         Pageable p = PageRequest.of(page, size);
         return repo.findAll(p);
+    }
+    public Page<Staff> getStaffByStatus(Pageable pageable, Integer status) {
+        return repo.findByStatus(status, pageable);
     }
     public List<Staff> getAllStaff() {
         return repo.findAll();
     }
 
-//    public Page<Staff_major_facility> getPage(Integer page, Integer size) {
-//        if (page < 0) {
-//            page = 0;
-//        }
-//        Pageable p = PageRequest.of(page, size);
-//        return repo.findAll(p);
-//    }
-
-//    public Staff add(Staff staff){
-//        return repo.save(staff);
-//    }
 public Staff add(@Valid Staff staff) {
     return repo.save(staff);
 }
