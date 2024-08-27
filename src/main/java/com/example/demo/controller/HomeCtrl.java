@@ -16,12 +16,14 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
 import java.net.MalformedURLException;
@@ -126,11 +128,8 @@ public ResponseEntity<?> getPageStaff(
 @GetMapping("/download-template")
 public ResponseEntity<ByteArrayResource> downloadTemplate() {
     try {
-        // Create a new workbook
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Staff Data");
-
-        // Create header row
         Row header = sheet.createRow(0);
         header.createCell(0).setCellValue("Mã nhân viên");
         header.createCell(1).setCellValue("Tên nhân viên");
@@ -169,5 +168,32 @@ public ResponseEntity<ByteArrayResource> downloadTemplate() {
         return ResponseEntity.badRequest().build();
     }
 }
+    @PostMapping("/import-staff")
+    public ResponseEntity<?> importStaff(@RequestParam("file") MultipartFile file) {
+        try {
+            Workbook workbook = new XSSFWorkbook(file.getInputStream());
+            Sheet sheet = workbook.getSheetAt(0);
+
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+
+                Staff staff = new Staff();
+                staff.setStaffCode(row.getCell(0).getStringCellValue());
+                staff.setName(row.getCell(1).getStringCellValue());
+                staff.setAccountFpt(row.getCell(2).getStringCellValue());
+                staff.setAccountFe(row.getCell(3).getStringCellValue());
+                staff.setStatus(row.getCell(4).getStringCellValue().equals("Đang hoạt động") ? 1 : 0);
+
+                servicesmf.add(staff);
+            }
+
+            workbook.close();
+            return ResponseEntity.ok("Import thành công!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Import thất bại.");
+        }
+    }
+
 
 }
